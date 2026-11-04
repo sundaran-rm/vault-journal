@@ -1,0 +1,73 @@
+<resources>
+    <string name="app_name">VaultJournal</string>
+
+    <!-- Auth Screen -->
+    <string name="auth_subtitle">Your private sanctuary for reflection, daily gratitude, mindful spending, and world horizons — online or 100% offline.</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="continue_offline_btn">Continue Offline without Sign-In</string>
+    <string name="continue_offline_caption">Works completely offline on this device with AES-256 encryption. Connect Google Sign-In anytime later to sync across devices.</string>
+    <string name="auth_encryption_badge">AES-256-GCM Encrypted • Offline &amp; Cloud Ready</string>
+    <string name="hero_banner_desc">Serene leather journal and warm candle sanctuary illustration</string>
+
+    <!-- Biometric & Numeric PIN Vault Screen -->
+    <string name="vault_setup_title">Create Journal Numeric PIN</string>
+    <string name="vault_setup_subtitle">Choose a 4 to 8 digit numeric PIN to derive your AES-256 encryption key, then optionally bind Biometric / Credential Manager unlock.</string>
+    <string name="vault_confirm_step_title">Confirm Numeric PIN</string>
+    <string name="vault_confirm_step_subtitle">Re-enter the same numeric PIN on the keypad to seal your encrypted journal vault.</string>
+    <string name="vault_unlock_title">Unlock VaultJournal</string>
+    <string name="vault_unlock_subtitle">Authenticate with Biometrics via Credential Manager or enter your numeric PIN below.</string>
+    <string name="vault_biometric_btn">Unlock with Biometrics / Passkey</string>
+    <string name="vault_save_credential_toggle">Enable Biometric &amp; Credential Manager Quick Unlock</string>
+    <string name="vault_unlock_btn">Unlock Journal</string>
+    <string name="vault_next_confirm_btn">Continue to Confirm PIN</string>
+    <string name="vault_create_btn">Seal &amp; Encrypt Vault</string>
+    <string name="vault_sign_out">Switch Google Account</string>
+    <string name="vault_exit_offline_to_auth">Sign in with Google Instead</string>
+
+    <!-- Sync & Offline Status -->
+    <string name="sync_badge_local_only">Offline Local Vault</string>
+    <string name="sync_badge_cloud_offline">Offline • Queued for Auto-Sync</string>
+    <string name="sync_badge_cloud_syncing">Syncing Offline Changes…</string>
+    <string name="sync_badge_cloud_synced">Encrypted Cloud Synced</string>
+    <string name="connect_google_sync_btn">Sign in with Google to Sync Cloud</string>
+    <string name="exit_offline_vault_btn">Exit to Sign-In Screen</string>
+
+    <!-- Navigation -->
+    <string name="nav_journal">Journal</string>
+    <string name="nav_expenses">Expenses</string>
+    <string name="nav_globe">Globe &amp; FX</string>
+    <string name="nav_vault">Vault</string>
+
+    <!-- Journal Screen -->
+    <string name="journal_header_title">Sanctuary Journal</string>
+    <string name="gratitude_card_label">Daily Gratitude Prompt</string>
+    <string name="gratitude_reflect_btn">Reflect Now</string>
+    <string name="search_journal_placeholder">Search decrypted entries or gratitude…</string>
+    <string name="manage_tags_btn">Manage Tags</string>
+    <string name="new_entry_fab">New Journal Entry</string>
+    <string name="empty_journal_title">Your Sanctuary Awaits</string>
+    <string name="empty_journal_subtitle">Capture today\'s mood, answer the daily gratitude prompt, attach a cherished photo, and organize with custom tags.</string>
+
+    <!-- Tag Management -->
+    <string name="tags_sheet_title">Manage Journal Tags</string>
+    <string name="tag_name_placeholder">Tag name (e.g., Work, Family, Travel)</string>
+    <string name="add_tag_btn">Save Tag</string>
+
+    <!-- Expenses Screen -->
+    <string name="expenses_header_title">Mindful Spending</string>
+    <string name="new_expense_fab">Log Expense</string>
+    <string name="empty_expenses_title">No Expenses Logged Yet</string>
+    <string name="empty_expenses_subtitle">Monitor daily spending habits across currencies and categories with encrypted merchant notes.</string>
+
+    <!-- Globe & Currency Screen -->
+    <string name="globe_header_title">Horizons &amp; FX</string>
+    <string name="currency_converter_title">Live Currency Converter</string>
+    <string name="world_clocks_title">Multi-Timezone Clocks</string>
+    <string name="add_clock_btn">Add City</string>
+
+    <!-- Vault Settings -->
+    <string name="vault_settings_title">Security &amp; Cloud Sync</string>
+    <string name="lock_vault_now">Lock Vault Immediately</string>
+    <string name="enroll_biometric_btn">Enroll Biometric / Credential Manager Unlock</string>
+    <string name="sign_out_btn">Sign Out</string>
+</resources>

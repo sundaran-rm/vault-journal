@@ -1,0 +1,226 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Primitive Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Validation Blueprints ---
+
+    function isValidVaultSecurityProfile(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.saltBase64 is string && data.saltBase64.size() >= 8 && data.saltBase64.size() <= 256 &&
+             data.verifierHashBase64 is string && data.verifierHashBase64.size() >= 16 && data.verifierHashBase64.size() <= 256 &&
+             data.iterations is int && data.iterations >= 10000 && data.iterations <= 500000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidJournalTag(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 40 &&
+             data.colorHex is string && data.colorHex.size() == 7 && data.colorHex.matches('^#[0-9A-Fa-f]{6}$') &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidJournalEntry(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.encryptedTitle is string && data.encryptedTitle.size() >= 1 && data.encryptedTitle.size() <= 4096 &&
+             data.encryptedBody is string && data.encryptedBody.size() >= 1 && data.encryptedBody.size() <= 100000 &&
+             data.encryptedGratitudeResponse is string && data.encryptedGratitudeResponse.size() <= 20000 &&
+             data.gratitudePromptText is string && data.gratitudePromptText.size() >= 1 && data.gratitudePromptText.size() <= 500 &&
+             data.mood is string && data.mood in ['RADIANT', 'CALM', 'GRATEFUL', 'NEUTRAL', 'REFLECTIVE', 'STRESSED'] &&
+             data.tagIds is list && data.tagIds.size() <= 20 && (data.tagIds.size() == 0 || (data.tagIds[0] is string && data.tagIds[0].size() <= 128)) &&
+             data.encryptedPhotoBase64 is string && data.encryptedPhotoBase64.size() <= 750000 &&
+             data.entryDateEpochMs is int && data.entryDateEpochMs > 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidExpenseItem(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.encryptedTitle is string && data.encryptedTitle.size() >= 1 && data.encryptedTitle.size() <= 2048 &&
+             data.encryptedNotes is string && data.encryptedNotes.size() <= 10000 &&
+             data.amountMinor is int && data.amountMinor > 0 && data.amountMinor <= 100000000000 &&
+             data.currencyCode is string && data.currencyCode.size() == 3 && data.currencyCode.matches('^[A-Z]{3}$') &&
+             data.category is string && data.category in ['DINING', 'TRANSPORT', 'GROCERIES', 'WELLNESS', 'SHOPPING', 'BILLS', 'TRAVEL', 'OTHER'] &&
+             data.spentAtEpochMs is int && data.spentAtEpochMs > 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidWorldClockItem(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.zoneId is string && data.zoneId.size() >= 1 && data.zoneId.size() <= 100 &&
+             data.cityLabel is string && data.cityLabel.size() >= 1 && data.cityLabel.size() <= 80 &&
+             data.sortOrder is int && data.sortOrder >= 0 && data.sortOrder <= 1000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // --- Scoped User Collections ---
+    match /users/{userId} {
+
+      // 1. Vault Security Profile (/users/{userId}/security/{docId})
+      match /security/{docId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(docId);
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         docId == 'vault_config' &&
+                         incoming().keys().hasAll(['userId', 'saltBase64', 'verifierHashBase64', 'iterations', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'saltBase64', 'verifierHashBase64', 'iterations', 'createdAt', 'updatedAt']) &&
+                         isValidVaultSecurityProfile(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidVaultSecurityProfile(incoming(), userId) &&
+                         isValidId(userId) &&
+                         docId == 'vault_config' &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['saltBase64', 'verifierHashBase64', 'iterations', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && docId == 'vault_config';
+      }
+
+      // 2. Custom Journal Tags (/users/{userId}/tags/{tagId})
+      match /tags/{tagId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(tagId) && existing().userId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(tagId) &&
+                         incoming().keys().hasAll(['userId', 'name', 'colorHex', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'colorHex', 'createdAt', 'updatedAt']) &&
+                         isValidJournalTag(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidJournalTag(incoming(), userId) &&
+                         isValidId(userId) &&
+                         isValidId(tagId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'colorHex', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(tagId) && existing().userId == request.auth.uid;
+      }
+
+      // 3. Encrypted Journal Entries (/users/{userId}/journals/{entryId})
+      match /journals/{entryId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(entryId) && existing().userId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(entryId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'encryptedTitle', 'encryptedBody', 'encryptedGratitudeResponse',
+                           'gratitudePromptText', 'mood', 'tagIds', 'encryptedPhotoBase64',
+                           'entryDateEpochMs', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'encryptedTitle', 'encryptedBody', 'encryptedGratitudeResponse',
+                           'gratitudePromptText', 'mood', 'tagIds', 'encryptedPhotoBase64',
+                           'entryDateEpochMs', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidJournalEntry(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidJournalEntry(incoming(), userId) &&
+                         isValidId(userId) &&
+                         isValidId(entryId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'encryptedTitle', 'encryptedBody', 'encryptedGratitudeResponse',
+                           'gratitudePromptText', 'mood', 'tagIds', 'encryptedPhotoBase64',
+                           'entryDateEpochMs', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(entryId) && existing().userId == request.auth.uid;
+      }
+
+      // 4. Financial Expenses (/users/{userId}/expenses/{expenseId})
+      match /expenses/{expenseId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(expenseId) && existing().userId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(expenseId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'encryptedTitle', 'encryptedNotes', 'amountMinor',
+                           'currencyCode', 'category', 'spentAtEpochMs', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'encryptedTitle', 'encryptedNotes', 'amountMinor',
+                           'currencyCode', 'category', 'spentAtEpochMs', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidExpenseItem(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidExpenseItem(incoming(), userId) &&
+                         isValidId(userId) &&
+                         isValidId(expenseId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'encryptedTitle', 'encryptedNotes', 'amountMinor',
+                           'currencyCode', 'category', 'spentAtEpochMs', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(expenseId) && existing().userId == request.auth.uid;
+      }
+
+      // 5. World Clocks (/users/{userId}/clocks/{clockId})
+      match /clocks/{clockId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(clockId) && existing().userId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(clockId) &&
+                         incoming().keys().hasAll(['userId', 'zoneId', 'cityLabel', 'sortOrder', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'zoneId', 'cityLabel', 'sortOrder', 'createdAt', 'updatedAt']) &&
+                         isValidWorldClockItem(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidWorldClockItem(incoming(), userId) &&
+                         isValidId(userId) &&
+                         isValidId(clockId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['zoneId', 'cityLabel', 'sortOrder', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(clockId) && existing().userId == request.auth.uid;
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "VaultJournal",
+  "description": "Encrypted personal journal with passcode lock, mood & photo memories, daily expense tracking, currency converter, and world clocks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

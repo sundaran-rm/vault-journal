@@ -1,0 +1,248 @@
+{
+  "entities": {
+    "VaultSecurityProfile": {
+      "title": "VaultSecurityProfile",
+      "description": "Per-user PBKDF2-HMAC-SHA256 salt and verifier hash used for client-side AES-256-GCM encryption and passcode lock across devices.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID matching request.auth.uid."
+        },
+        "saltBase64": {
+          "type": "string",
+          "description": "Base64-encoded 16-byte cryptographic salt."
+        },
+        "verifierHashBase64": {
+          "type": "string",
+          "description": "Base64-encoded SHA-256 verifier hash of derived key."
+        },
+        "iterations": {
+          "type": "integer",
+          "description": "PBKDF2 iteration count."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when vault passcode was initialized (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when vault passcode was last updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["userId", "saltBase64", "verifierHashBase64", "iterations", "createdAt", "updatedAt"]
+    },
+    "JournalTag": {
+      "title": "JournalTag",
+      "description": "User-created custom tag for categorizing and filtering journal entries.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "name": {
+          "type": "string",
+          "description": "Tag display name (e.g., Work, Family, Travel, Ideas, Health)."
+        },
+        "colorHex": {
+          "type": "string",
+          "description": "Hex color code for tag badge (#RRGGBB)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["userId", "name", "colorHex", "createdAt", "updatedAt"]
+    },
+    "JournalEntry": {
+      "title": "JournalEntry",
+      "description": "End-to-end AES-256-GCM encrypted personal journal entry with mood tracking, daily gratitude prompt reflection, tags, and compressed encrypted photo attachment.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "encryptedTitle": {
+          "type": "string",
+          "description": "AES-256-GCM encrypted title payload (iv:ciphertext in Base64)."
+        },
+        "encryptedBody": {
+          "type": "string",
+          "description": "AES-256-GCM encrypted journal body payload (iv:ciphertext in Base64)."
+        },
+        "encryptedGratitudeResponse": {
+          "type": "string",
+          "description": "AES-256-GCM encrypted response to the daily gratitude prompt (or empty string)."
+        },
+        "gratitudePromptText": {
+          "type": "string",
+          "description": "The daily gratitude prompt question presented for this entry."
+        },
+        "mood": {
+          "type": "string",
+          "enum": ["RADIANT", "CALM", "GRATEFUL", "NEUTRAL", "REFLECTIVE", "STRESSED"],
+          "description": "Mood state associated with the journal entry."
+        },
+        "tagIds": {
+          "type": "array",
+          "description": "Bounded list of up to 20 JournalTag document IDs associated with this entry."
+        },
+        "encryptedPhotoBase64": {
+          "type": "string",
+          "description": "Optional AES-256-GCM encrypted compressed JPEG photo attachment (or empty string)."
+        },
+        "entryDateEpochMs": {
+          "type": "integer",
+          "description": "Epoch milliseconds of the journal entry date."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "encryptedTitle",
+        "encryptedBody",
+        "encryptedGratitudeResponse",
+        "gratitudePromptText",
+        "mood",
+        "tagIds",
+        "encryptedPhotoBase64",
+        "entryDateEpochMs",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ExpenseItem": {
+      "title": "ExpenseItem",
+      "description": "Daily financial expense record for personal spending habit monitoring.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "encryptedTitle": {
+          "type": "string",
+          "description": "AES-256-GCM encrypted merchant or expense title."
+        },
+        "encryptedNotes": {
+          "type": "string",
+          "description": "AES-256-GCM encrypted expense notes (or empty string)."
+        },
+        "amountMinor": {
+          "type": "integer",
+          "description": "Amount in minor currency units (cents, > 0)."
+        },
+        "currencyCode": {
+          "type": "string",
+          "description": "ISO 4217 3-letter currency code (e.g., USD, EUR, JPY)."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["DINING", "TRANSPORT", "GROCERIES", "WELLNESS", "SHOPPING", "BILLS", "TRAVEL", "OTHER"],
+          "description": "Spending category."
+        },
+        "spentAtEpochMs": {
+          "type": "integer",
+          "description": "Epoch milliseconds when expense occurred."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "encryptedTitle",
+        "encryptedNotes",
+        "amountMinor",
+        "currencyCode",
+        "category",
+        "spentAtEpochMs",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "WorldClockItem": {
+      "title": "WorldClockItem",
+      "description": "Saved world timezone clock synced across user devices.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "zoneId": {
+          "type": "string",
+          "description": "IANA TimeZone ID (e.g., America/New_York, Asia/Tokyo)."
+        },
+        "cityLabel": {
+          "type": "string",
+          "description": "Display city name."
+        },
+        "sortOrder": {
+          "type": "integer",
+          "description": "Display sort index."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["userId", "zoneId", "cityLabel", "sortOrder", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/security/{docId}": {
+      "schema": "VaultSecurityProfile",
+      "description": "Per-user vault passcode KDF salt and verifier document (docId = 'vault_config')."
+    },
+    "/users/{userId}/tags/{tagId}": {
+      "schema": "JournalTag",
+      "description": "Custom journal tags created by the user."
+    },
+    "/users/{userId}/journals/{entryId}": {
+      "schema": "JournalEntry",
+      "description": "Encrypted personal journal entries with mood, gratitude prompt, tags, and encrypted photo."
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": "ExpenseItem",
+      "description": "Daily financial expense logs for spending tracking."
+    },
+    "/users/{userId}/clocks/{clockId}": {
+      "schema": "WorldClockItem",
+      "description": "Pinned multi-timezone world clocks."
+    }
+  }
+}
